@@ -185,17 +185,19 @@ class Opts(object):
 		self.batch_size = 20
 
 
-def CreateMLP (input,n_input, n_hidden, n_output):
-	rng = numpy.random.RandomState(1234)
-	return MLP(
-			rng=rng,
-			input=input,
-            n_in=n_input,
-		    n_hidden=n_hidden,
-            n_out=n_output
-        )
+def CreateMLP (n_input, n_hidden, n_output):
+    rng = numpy.random.RandomState(1234)
+    input = T.matrix ('x')
+    return MLP(
+        rng=rng,
+        input=input,
+        n_in=n_input,
+        n_hidden=n_hidden,
+        n_out=n_output
+    )
 
-def TrainMLP(mlp, input, itrain, itest, ival):
+#def TrainMLP (mlp, input, target, itrain, itest, ival):
+def TrainMLP (mlp, input, itrain, itest, ival):
 
     print 'Setting parameters'
     learning_rate = mlp.opts.learning_rate
@@ -207,6 +209,21 @@ def TrainMLP(mlp, input, itrain, itest, ival):
 
     #datasets = load_data(dataset)
     datasets = input
+
+    ###################################
+    # IMPLEMENTAR itrain, itest, ival #
+    ###################################
+
+    # Testes mapeando seno!!!
+
+    # train_set_x = theano.shared (input [itrain], borrow=True)
+    # train_set_y = theano.shared (target [itrain], borrow=True)
+
+    # test_set_x = theano.shared (input [itest], borrow=True)
+    # test_set_y = theano.shared (target [itest], borrow=True)
+
+    # valid_set_x = theano.shared (input [ival], borrow=True)
+    # valid_set_y = theano.shared (target [ival], borrow=True)
 
     train_set_x, train_set_y = datasets[0]
     valid_set_x, valid_set_y = datasets[1]
@@ -282,10 +299,15 @@ def TrainMLP(mlp, input, itrain, itest, ival):
     # B = [b1, b2, b3, b4], zip generates a list C of same size, where each
     # element is a pair formed from the two lists :
     #    C = [(a1, b1), (a2, b2), (a3, b3), (a4, b4)]
+
+    # W' = W - learning_rate * gradient_cost
+    # b' = b - learning_rate * gradient_cost
     updates = [
         (param, param - learning_rate * gparam)
         for param, gparam in zip(classifier.params, gparams)
     ]
+
+
 
     # compiling a Theano function `train_model` that returns the cost, but
     # in the same time updates the parameter of the model based on the rules
@@ -384,5 +406,24 @@ def TrainMLP(mlp, input, itrain, itest, ival):
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
 
+    mlp.logRegressionLayer = classifier.logRegressionLayer
+    mlp.hiddenLayer.W = classifier.hiddenLayer.W
+    mlp.hiddenLayer.b = classifier.hiddenLayer.b
 
 
+def SimMLP (mlp, input):
+
+    if type(input).__name__ != 'TensorVariable':
+        t_input = theano.shared (input)
+    else:
+        t_input = input
+
+    hiddenLayer_output = T.dot (t_input, mlp.hiddenLayer.W) + mlp.hiddenLayer.b
+    
+    output = mlp.logRegressionLayer.CalculateOutput (hiddenLayer_output)
+
+
+    return output
+    #print '[',output.shape[0].eval(), ' ',output.shape[1],']'
+
+    

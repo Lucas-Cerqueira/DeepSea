@@ -169,6 +169,11 @@ class LogisticRegression(object):
             raise NotImplementedError()
 
 
+    def CalculateOutput (self, input_log):
+        return T.nnet.softmax(T.dot(input_log, self.W) + self.b)
+
+
+
 def load_data(dataset):
     ''' Loads the dataset
 
@@ -224,6 +229,7 @@ def load_data(dataset):
         variable) would lead to a large decrease in performance.
         """
         data_x, data_y = data_xy
+
         shared_x = theano.shared(numpy.asarray(data_x,
                                                dtype=theano.config.floatX),
                                  borrow=borrow)
