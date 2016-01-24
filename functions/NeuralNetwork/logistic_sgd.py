@@ -99,12 +99,18 @@ class LogisticRegression(object):
         # x is a matrix where row-j  represents input training sample-j
         # b is a vector where element-k represent the free parameter of
         # hyperplane-k
-        self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b)
+        if (input != None):
+            self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b)
+ #           print self.p_y_given_x.eval().shape
 
-        # symbolic description of how to compute prediction as class whose
-        # probability is maximal
-        self.y_pred = T.argmax(self.p_y_given_x, axis=1)
-        # end-snippet-1
+            # symbolic description of how to compute prediction as class whose
+            # probability is maximal
+            self.y_pred = T.argmax(self.p_y_given_x, axis=1)
+ #           print self.y_pred.eval().shape
+            # end-snippet-1
+        else:
+            self.p_y_given_x = None
+            self.y_pred = None
 
         # parameters of the model
         self.params = [self.W, self.b]
@@ -141,7 +147,8 @@ class LogisticRegression(object):
         # LP[n-1,y[n-1]]] and T.mean(LP[T.arange(y.shape[0]),y]) is
         # the mean (across minibatch examples) of the elements in v,
         # i.e., the mean log-likelihood across the minibatch.
-        return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])
+        if (self.p_y_given_x != None):
+            return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])
         # end-snippet-2
 
     def errors(self, y):
@@ -153,20 +160,20 @@ class LogisticRegression(object):
         :param y: corresponds to a vector that gives for each example the
                   correct label
         """
-
-        # check if y has same dimension of y_pred
-        if y.ndim != self.y_pred.ndim:
-            raise TypeError(
-                'y should have the same shape as self.y_pred',
-                ('y', y.type, 'y_pred', self.y_pred.type)
-            )
-        # check if y is of the correct datatype
-        if y.dtype.startswith('int'):
-            # the T.neq operator returns a vector of 0s and 1s, where 1
-            # represents a mistake in prediction
-            return T.mean(T.neq(self.y_pred, y))
-        else:
-            raise NotImplementedError()
+        if (self.y_pred != None):
+            # check if y has same dimension of y_pred
+            if y.ndim != self.y_pred.ndim:
+                raise TypeError(
+                    'y should have the same shape as self.y_pred',
+                    ('y', y.type, 'y_pred', self.y_pred.type)
+                )
+            # check if y is of the correct datatype
+            if y.dtype.startswith('int'):
+                # the T.neq operator returns a vector of 0s and 1s, where 1
+                # represents a mistake in prediction
+                return T.mean(T.neq(self.y_pred, y))
+            else:
+                raise NotImplementedError()
 
 
     def CalculateOutput (self, input_log):

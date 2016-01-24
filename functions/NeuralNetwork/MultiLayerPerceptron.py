@@ -153,7 +153,7 @@ class MLP(object):
     class).
     """
 
-    def __init__(self, rng, input, n_in, n_hidden, n_out):
+    def __init__(self, rng, input, n_in, n_hidden, n_out, cost_function):
         """Initialize the parameters for the multilayer perceptron
 
         :type rng: numpy.random.RandomState
@@ -222,6 +222,8 @@ class MLP(object):
             + (self.logRegressionLayer.W ** 2).sum()
         )
 
+        self.cost_function = cost_function
+
         # negative log likelihood of the MLP is given by the negative
         # log likelihood of the output of the model, computed in the
         # logistic regression layer
@@ -243,6 +245,12 @@ class MLP(object):
         self.n_hidden = n_hidden
         self.n_out = n_out
 
+    def cost (self,y):
+        if (self.cost_function == 'neg_log'):
+            return -T.mean(T.log(self.logRegressionLayer.p_y_given_x)[T.arange(y.shape[0]), y])
+        elif (self.cost_function == 'mse'):
+            return T.mean ((y - self.logRegressionLayer.y_pred) ** 2)
+
 
 class Opts(object):
     def __init__(self):
@@ -253,7 +261,7 @@ class Opts(object):
 		self.batch_size = 20
 
 
-def CreateMLP (n_input, n_hidden, n_output):
+def CreateMLP (n_input, n_hidden, n_output, cost_function):
     rng = numpy.random.RandomState(1234)
     input = T.matrix ('x')
     return MLP(
@@ -261,7 +269,8 @@ def CreateMLP (n_input, n_hidden, n_output):
         input=input,
         n_in=n_input,
         n_hidden=n_hidden,
-        n_out=n_output
+        n_out=n_output,
+        cost_function=cost_function
     )
 
 #def TrainMLP (mlp, input, target, itrain, itest, ival):
@@ -321,7 +330,8 @@ def TrainMLP (mlp, input, itrain, itest, ival):
         input=x,
         n_in=mlp.n_in,
         n_hidden=mlp.n_hidden,
-        n_out=mlp.n_out
+        n_out=mlp.n_out,
+        cost_function=mlp.cost_function
     )
 
     # start-snippet-4
@@ -329,7 +339,7 @@ def TrainMLP (mlp, input, itrain, itest, ival):
     # the model plus the regularization terms (L1 and L2); cost is expressed
     # here symbolically
     cost = (
-        classifier.negative_log_likelihood(y)
+        classifier.cost (y)
         + L1_reg * classifier.L1
         + L2_reg * classifier.L2_sqr
     )
@@ -487,6 +497,7 @@ def SimMLP (mlp, input):
         t_input = input
 
     hiddenLayer_output = T.dot (t_input, mlp.hiddenLayer.W) + mlp.hiddenLayer.b
+
     
     output = mlp.logRegressionLayer.CalculateOutput (hiddenLayer_output)
 
